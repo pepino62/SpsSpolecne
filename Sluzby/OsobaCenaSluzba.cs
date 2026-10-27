@@ -101,21 +101,35 @@ namespace SpsSpolecne
                 throw new JisException();
         }
 
-        static string SqlInsert => $@"INSERT INTO {Tab.D5} (f0, f501, f201, ft501, f502, f503, f504, f505, f506, f507, f02, f03)
-            VALUES (' ', @f501, @f201, @ft501, @f502, @f503, @f504, @f505, @f506, @f507, @ukey, NOW())";
+        /// <summary>
+        /// f1 = 'A' - povinna polozka zalozena vypoctem ceny (SpsLite CENA-VYPOCET): nelze opravit ani jednotlive smazat, jen smazat celou cenu (SmazatVse)
+        /// </summary>
+        public const string Povinna = "A";
+
+        static string SqlInsert => $@"INSERT INTO {Tab.D5} (f0, f1, f501, f201, ft501, f502, f503, f504, f505, f506, f507, f02, f03)
+            VALUES (' ', @f1, @f501, @f201, @ft501, @f502, @f503, @f504, @f505, @f506, @f507, @ukey, NOW())";
+
+        /// <summary>
+        /// povinna polozka (f1 = 'A') podle stavu v databazi
+        /// </summary>
+        public static bool JePovinna(string f501)
+            => SpravaDat.Scalar( $"SELECT 1 FROM {Tab.D5} WHERE f501 = @f501 AND f1 = @f1", new { f501 = f501 ?? "", f1 = Povinna } ) != null;
 
         /// <summary>
         /// ulozi polozku ceny (VFP SPORTR6_SAVEC / SPORTZ6_SAVEC) - nova polozka pres sezonu i mimosezonu = dva radky;
-        /// nova dostane klic az po uspesnem zapisu
+        /// nova dostane klic az po uspesnem zapisu; povinna = zalozena vypoctem ceny (f1 = 'A'), pak ji nelze opravit
         /// <br>kemp: SPZ povinna u polozky typu S, mimosezona ma stejnou SPZ; penzion: polozka povinna i pri oprave, SPZ mimosezony F507_1</br>
         /// </summary>
-        public static void Ulozit(ICena c, IRezervace d)
+        public static void Ulozit(ICena c, IRezervace d, bool povinna = false)
         {
             if (string.IsNullOrWhiteSpace( c.FT501 ) && (d.F217 != "04" || (Tab.Penzion && !string.IsNullOrWhiteSpace( c.F501 ))))
                 throw new JisException( "Není vybrána POLOŽKA !" );
 
+            string f1 = povinna ? Povinna : "";
             if (!string.IsNullOrWhiteSpace( c.F501 ))
             {
+                if (JePovinna( c.F501 ))
+                    throw new JisException( "Povinnou položku ceny nelze opravit.\n\nZměna je možná jen smazáním celé ceny (Smazat cenu) a novým výpočtem." );
                 if (!Tab.Penzion && string.IsNullOrWhiteSpace( c.F507 ) && c.FT508 == "S")
                     throw new JisException( "Není zadana SPZ (karavanu,auta) !" );
                 Exec( $@"UPDATE {Tab.D5} d5 SET f0 = ' ', f201 = @f201, f502 = @f502, f503 = @f503, f504 = @f504, f505 = @f505, f506 = @f506, f507 = @f507, f02 = @ukey, f03 = NOW()
@@ -128,12 +142,12 @@ namespace SpsSpolecne
             using (var tr = SpravaDat.Transakce())     // sezona i mimosezona spolecne
             {
                 f501 = Cislovani.NovyKlic( "F501" );
-                Exec( SqlInsert, new { f501, f201 = c.F201 ?? "", ft501 = c.FT501 ?? "", f502 = c.F502, f503 = c.F503, f504 = c.F504, f505 = c.F505, f506 = c.F506 ?? "", f507 = c.F507 ?? "", ukey = Goa.Ukey ?? "" } );
+                Exec( SqlInsert, new { f1, f501, f201 = c.F201 ?? "", ft501 = c.FT501 ?? "", f502 = c.F502, f503 = c.F503, f504 = c.F504, f505 = c.F505, f506 = c.F506 ?? "", f507 = c.F507 ?? "", ukey = Goa.Ukey ?? "" } );
 
                 if (!string.IsNullOrWhiteSpace( c.F506_1 ))    // cena pres sezonu i mimosezonu - dalsi radek (mimosezona)
                     Exec( SqlInsert, new
                     {
-                        f501 = Cislovani.NovyKlic( "F501" ), f201 = c.F201 ?? "", ft501 = c.FT501 ?? "", f502 = c.F502_1, f503 = c.F503_1, f504 = c.F504, f505 = c.F505_1, f506 = c.F506_1 ?? "",
+                        f1, f501 = Cislovani.NovyKlic( "F501" ), f201 = c.F201 ?? "", ft501 = c.FT501 ?? "", f502 = c.F502_1, f503 = c.F503_1, f504 = c.F504, f505 = c.F505_1, f506 = c.F506_1 ?? "",
                         f507 = (Tab.Penzion ? c.F507_1 : c.F507) ?? "", ukey = Goa.Ukey ?? ""
                     } );
 
@@ -143,12 +157,14 @@ namespace SpsSpolecne
         }
 
         /// <summary>
-        /// vymaze polozku ceny
+        /// vymaze polozku ceny - povinnou (f1 = 'A') jen spolu s celou cenou (SmazatVse)
         /// </summary>
         public static void Smazat(string f501)
         {
             if (string.IsNullOrWhiteSpace( f501 ))
                 throw new JisException( "Není vybrána položka ceny" );
+            if (JePovinna( f501 ))
+                throw new JisException( "Povinnou položku ceny nelze smazat jednotlivě.\n\nPoužijte Smazat cenu - smažou se všechny položky a cena se založí znovu." );
             Exec( $"DELETE FROM {Tab.D5} WHERE f501 = @f501", new { f501 } );
         }
 
