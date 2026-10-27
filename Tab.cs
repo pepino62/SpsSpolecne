@@ -23,13 +23,20 @@ namespace SpsSpolecne
             _predpona = predpona;
         }
 
-        static string Nazev(string cislo)
-            => (_predpona ?? throw new InvalidOperationException( "Tab.Init nebyl zavolán" )) + cislo;
+        static string Predpona => _predpona ?? throw new InvalidOperationException( "Tab.Init nebyl zavolán" );
+
+        static string Nazev(string cislo) => Predpona + cislo;
+
+        /// <summary>
+        /// SPSZS (penzion) - pro male rozdily v jinak spolecne logice
+        /// </summary>
+        public static bool Penzion => Predpona == "dz";
 
         public static string D2 => Nazev( "2" );    // rezervace
         public static string D4 => Nazev( "4" );    // zalohy
         public static string D5 => Nazev( "5" );    // polozky ceny
         public static string D6 => Nazev( "6" );    // osoby
         public static string D9 => Nazev( "9" );    // sikana (evidence zmen)
+        public static string DA => Nazev( "a" ).ToUpper();    // klice a cislovani (DA / DZA)
     }
 }
