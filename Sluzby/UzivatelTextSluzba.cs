@@ -14,7 +14,7 @@ namespace SpsSpolecne
         public string FPASSWORD { get; set; } = "";
         public string FROLE { get; set; } = "003,006";
         public string FPHONE { get; set; } = "";
-        public string FEMAIL { get; set; } = "";
+        public string FEMAIL { get; set; } = "@";       // prazdny e-mail = "@" (EmailBehavior)
         public string FCOMMENT { get; set; } = "";
         public string Nadpis => string.IsNullOrEmpty( FUKEY ) ? "NOVÝ UŽIVATEL" : $"UŽIVATEL  {FUKEY}";
     }
@@ -68,7 +68,7 @@ namespace SpsSpolecne
                 frole = Trim( u.FROLE ),
                 fpassword = Trim( u.FPASSWORD ),
                 fphone = Trim( u.FPHONE ),
-                femail = Trim( u.FEMAIL ),
+                femail = EmailBehavior.ProUlozeni( u.FEMAIL ),
                 fcomment = (u.FCOMMENT ?? "").TrimEnd(),
                 fukey = Trim( u.FUKEY )
             };
