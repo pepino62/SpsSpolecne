@@ -143,16 +143,7 @@ namespace SpsSpolecne
         {
         }
 
-        /// <summary>
-        /// telefon bez predvolby a mezer - "+420 606 330 373" -> "606330373" (stejne jako SUBSTRING(f307,5) v SQL)
-        /// </summary>
-        public static string CisloTelefonu(string telefon)
-        {
-            string s = (telefon ?? "").Trim();
-            if (s.StartsWith( "+" ))
-                s = s.Length > 4 ? s.Substring( 4 ) : "";
-            return new string( s.Where( char.IsDigit ).ToArray() );
-        }
+        public static string CisloTelefonu(string telefon) => NabidkaZakazniku.CisloTelefonu( telefon );
 
         string EmailHledany => (Email ?? "").Trim() == "@" ? "" : (Email ?? "").Trim();
 
@@ -188,16 +179,7 @@ namespace SpsSpolecne
         {
             try
             {
-                string cmd = $@"
-SELECT DISTINCT d2.f302, d2.f303, d2.f307, d2.f308,
-       CAST(SUBSTRING(d2.f307,5) AS CHAR(16)) AS FTEL,
-       CAST(REPLACE(SUBSTRING(d2.f307,5),' ','') AS CHAR(16)) AS FTELC,
-       CAST(CONCAT(RPAD(d2.f302,20,' '),RPAD(d2.f303,12,' '),RPAD(d2.f307,16,' '),RPAD(d2.f308,30,' ')) AS CHAR(78)) AS FCOMPARE
-FROM {Tab.D2} d2
-WHERE d2.f302 != '' AND (LENGTH(TRIM(d2.f307)) > 4 OR TRIM(d2.f308) NOT IN ('','@'))
-ORDER BY FCOMPARE";
-
-                SpravaDat.Select( "kartajmena", cmd, hide: true );
+                SpravaDat.Select( "kartajmena", NabidkaZakazniku.Sql( vcetneZrusenych: true ), hide: true );    // i zakaznik, ktery jen rusil
                 Nabidka = Goa.TableView( "kartajmena" );
             }
             catch (Exception ex)
@@ -225,7 +207,7 @@ ORDER BY FCOMPARE";
                 {
                     // telefon povazujeme za jedinecny - je-li zadan, hleda se jen podle nej (jinak by se pridali
                     // zakaznici s jinym telefonem a stejnym e-mailem / jmenem); bez telefonu e-mail, bez obou jmeno
-                    if (tel.Length >= 6)
+                    if (NabidkaZakazniku.PlatnyTelefon( tel ))     // vyplnove cislo (111111111, 123456789) by vratilo cizi rezervace
                         podminky.Add( "REPLACE(SUBSTRING(d2.f307,5),' ','') = @tel" );
                     else if (email.Contains( "@" ) && email.Length > 1)
                         podminky.Add( "d2.f308 = @email" );
@@ -235,7 +217,7 @@ ORDER BY FCOMPARE";
                         podminky.Add( "d2.f302 = @prijmeni" );
 
                     if (podminky.Count == 0)
-                        throw new JisException( "Zadejte příjmení, telefon (alespoň 6 číslic) nebo e-mail" );
+                        throw new JisException( "Zadejte příjmení, telefon (alespoň 6 číslic, ne výplňové číslo) nebo e-mail" );
                 }
                 string where = podminky.Count == 0 ? "1 = 2" : string.Join( " OR ", podminky );
 
