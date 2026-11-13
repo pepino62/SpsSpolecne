@@ -38,5 +38,7 @@ namespace SpsSpolecne
         public static string D6 => Nazev( "6" );    // osoby
         public static string D9 => Nazev( "9" );    // sikana (evidence zmen)
         public static string DA => Nazev( "a" ).ToUpper();    // klice a cislovani (DA / DZA)
+
+        public static string T4 => Penzion ? "tz4" : "t4";    // chaty / pokoje (ft401, ft402 nazev)
     }
 }

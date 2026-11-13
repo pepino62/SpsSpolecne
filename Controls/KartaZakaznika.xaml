@@ -1,0 +1,102 @@
+<jr:JisUserControl x:Class="SpsSpolecne.KartaZakaznika"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:SpsSpolecne"
+             xmlns:jr="clr-namespace:JisResources;assembly=JisResources"
+             mc:Ignorable="d"
+            >
+
+    <Grid Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <jr:JisBorder Margin="5,0,0,0" VerticalAlignment="Top" jisBackground="#CAD3EF" jisBorder="1.5">
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <Label Content="příjmení :" Style="{StaticResource LBL_VERT}" />
+                        <Label Content="jméno :" Style="{StaticResource LBL_VERT}" />
+                        <Label Content="telefon :" Style="{StaticResource LBL_VERT}" />
+                        <Label Content="E-mail :" Style="{StaticResource LBL_VERT}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <jr:JisTextBoxGrid
+                            x:Name="TxtPrijmeni"
+                            Width="180"
+                            ComparedField="F302"
+                            DataGridSource="{Binding Nabidka, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Fields="F302,F303,FTEL,F308"
+                            KeyFieldName="FCOMPARE"
+                            KeyFieldValue="{Binding KlicJmeno, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            MaxLength="20"
+                            MinStartChar="0"
+                            OnSelectKeyValue="Nabidka_OnSelectKeyValue"
+                            PreviewGotKeyboardFocus="NaplnNabidku"
+                            Style="{StaticResource GET_LEFT}"
+                            Text="{Binding Prijmeni, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TextAlignment="Left" />
+
+                        <jr:JisTextBox
+                            MinWidth="90"
+                            MaxLength="12"
+                            Style="{StaticResource GET_LEFT}"
+                            Text="{Binding Jmeno, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TextAlignment="Left" />
+
+                        <!--  telefon - hledani podle cisla bez predvolby a mezer (zakaznik volal, obsluha dohleda kdo to byl)  -->
+                        <jr:JisTextBoxGrid
+                            x:Name="TxtTelefon"
+                            Width="120"
+                            HorizontalAlignment="Left"
+                            ComparedField="FTELC"
+                            DataGridSource="{Binding Nabidka, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Fields="FTEL,F302,F303,F308"
+                            KeyFieldName="FCOMPARE"
+                            KeyFieldValue="{Binding KlicTelefon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            MaxLength="12"
+                            MinStartChar="2"
+                            OnSelectKeyValue="Nabidka_OnSelectKeyValue"
+                            PreviewGotKeyboardFocus="NaplnNabidku"
+                            Style="{StaticResource GET_LEFT}"
+                            Text="{Binding Telefon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TextAlignment="Left"
+                            ToolTip="číslo bez předvolby a bez mezer, např. 606330373" />
+
+                        <jr:JisTextBox
+                            MinWidth="180"
+                            jr:EmailBehavior.IsEmail="True"
+                            MaxLength="30"
+                            Style="{StaticResource GET_LEFT}"
+                            Text="{Binding Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TextAlignment="Left" />
+                    </StackPanel>
+                </Grid>
+            </jr:JisBorder>
+
+            <StackPanel Margin="10,0,0,0" VerticalAlignment="Top">
+                <StackPanel Orientation="Horizontal">
+                    <jr:JisButton Background="MediumSeaGreen" Click="BtnNacti_Click" Content=" NAČÍST " Style="{StaticResource BUTT_DARK}"
+                                  ToolTip="vyhledá rezervace podle telefonu, bez telefonu podle e-mailu, bez obou podle příjmení a jména" />
+                    <jr:JisButton Margin="10,0,0,0" Background="Salmon" Click="BtnVymaz_Click" Content=" VYMAZAT " Style="{StaticResource BUTT_DARK}"
+                                  ToolTip="vymaže zadané údaje" />
+                </StackPanel>
+                <Label Margin="0,10,0,0" Content="{Binding Souhrn}" FontSize="12" FontWeight="Bold" Foreground="Navy" Style="{StaticResource LBL_CR}" />
+                <Label Content="{Binding SouhrnZrusene}" FontSize="12" FontWeight="Bold" Foreground="Red" Style="{StaticResource LBL_CR}" />
+            </StackPanel>
+        </StackPanel>
+
+        <jr:JisDataGrid x:Name="USERDATAGRID1" Grid.Row="1" Margin="5,10,0,0"
+                       jisWgridSkey="SPS_KARTA"
+                       jisSourceName="KARTA"/>
+    </Grid>
+</jr:JisUserControl>
