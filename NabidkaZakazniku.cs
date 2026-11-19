@@ -5,7 +5,7 @@ namespace SpsSpolecne
     /// <summary>
     /// Nabidka opakovanych zakazniku z rezervaci (d2 / dz2) - jeden radek na zakaznika misto kazde kombinace jmeno + telefon + e-mail
     /// <br>zakaznik = telefon (bez predvolby a mezer); bez platneho telefonu e-mail; bez obou prijmeni + jmeno</br>
-    /// <br>za zakaznika se vezme jmeno, telefon a e-mail z jeho posledni rezervace - oprava preklepu v nove rezervaci prebije starou</br>
+    /// <br>za zakaznika se vezme jmeno, telefon a e-mail z naposledy ulozene rezervace (f03) - oprava preklepu se v nabidce projevi hned</br>
     /// <br>e-mail bez telefonu se nenabizi zvlast, pokud uz je u zakaznika s telefonem</br>
     /// </summary>
     public static class NabidkaZakazniku
@@ -45,7 +45,7 @@ namespace SpsSpolecne
             return $@"
 WITH k AS
 (
-    SELECT d2.f201, d2.f203, d2.f302, d2.f303, d2.f307, d2.f308,
+    SELECT d2.f201, d2.f203, d2.f03, d2.f302, d2.f303, d2.f307, d2.f308,
            REPLACE(SUBSTRING(d2.f307,5),' ','') AS tel,
            LOWER(TRIM(d2.f308)) AS mail
     FROM {Tab.D2} d2
@@ -65,7 +65,7 @@ tm AS
 ),
 k3 AS
 (
-    SELECT k2.*, ROW_NUMBER() OVER (PARTITION BY k2.fident ORDER BY k2.f203 DESC, k2.f201 DESC) AS poradi
+    SELECT k2.*, ROW_NUMBER() OVER (PARTITION BY k2.fident ORDER BY k2.f03 IS NULL, k2.f03 DESC, k2.f203 DESC, k2.f201 DESC) AS poradi
     FROM k2
     LEFT JOIN tm ON k2.fident LIKE 'E%' AND tm.mail = k2.mail     -- e-mail uz je u zakaznika s telefonem
     WHERE tm.mail IS NULL
